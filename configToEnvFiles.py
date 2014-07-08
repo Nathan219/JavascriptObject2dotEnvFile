@@ -1,12 +1,19 @@
 import sys
 import string
+import re
+def safeword(input, toUpper):
+    variable = input.strip(' \t\n\r,"')
+    if toUpper:
+        variable = variable.upper()
+    return re.sub(r"[^\w\d]", "_", variable)
+
 def parse(inputfile, outputfile, parentprefix):
     line = inputfile.readline()
     if "}" in line and '{' not in line:
         return False
     elif "{" in line and '}' not in line:
         splitparts = string.split(line, ":", 1)
-        variable = splitparts[0].upper().strip(' \t\n\r,"')
+        variable = safeword(splitparts[0], True)
         parentprefix += variable + "_"
         condition = True
         while condition:
@@ -14,16 +21,18 @@ def parse(inputfile, outputfile, parentprefix):
         return True
     elif "[" in line and "]" not in line:
         splitparts = string.split(line, ":", 1)
-        variable = splitparts[0].upper().strip(' \t\n\r,"')
-        condition = True
-        outputfile.write(parentprefix + variable + "=[")
-        while condition:
-            condition = parseSquareBracket(inputfile, outputfile)
+        variable = safeword(splitparts[0], True)
+        line = inputfile.readline()
+        outputfile.write(parentprefix + variable + "=[" + line.strip(' \t\n\r,'))
+        line = inputfile.readline()
+        while "]" not in line:
+            outputfile.write("," + line.strip(' \t\n\r,'))
+            line = inputfile.readline()
         outputfile.write("]\n")
         return True
     elif ":" in line:
         splitparts = string.split(line, ":", 1)
-        variable = parentprefix + splitparts[0].upper().strip(' \t\n\r,"')
+        variable = parentprefix + safeword(splitparts[0], True)
         towrite = "{}={}".format(variable, splitparts[1].strip(' \t\n\r,'))
         print(towrite)
         outputfile.write(towrite + "\n")
@@ -34,15 +43,6 @@ def parse(inputfile, outputfile, parentprefix):
         outputfile.write("]" + "\n")
         return True
     else:
-        return True
-
-def parseSquareBracket(inputfile, outputfile):
-    line = inputfile.readline()
-    if "]" in line:
-        return False
-    else:
-        output = line.strip(' \t\n\r')
-        outputfile.write(output)
         return True
 
 Configfile = sys.argv[1]
