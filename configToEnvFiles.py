@@ -4,7 +4,8 @@ import re
 def safeword(input, toUpper):
     variable = input.strip(' \t\n\r,"')
     if toUpper:
-        variable = variable.upper()
+        s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', variable)
+        variable = re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).upper()
     return re.sub(r"[^\w\d]", "_", variable)
 
 def parse(inputfile, outputfile, parentprefix):
