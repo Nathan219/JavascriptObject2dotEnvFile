@@ -1,6 +1,7 @@
 import sys
 import string
 import re
+import os
 def safeVariable(input):
     variable = input.strip(' \t\n\r,"').replace(" ", "")
     s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', variable)
@@ -52,26 +53,36 @@ def parse(inputfile, outputfile, parentprefix):
     else:
         return True
 
-Configfile = sys.argv[1]
-Outfile = ".env"
-if ".json" in Configfile:
-    configFilePrefix = string.split(Configfile, "/")
-    length= len(configFilePrefix)-1
-    configPrefix = string.split(configFilePrefix[length], ".json")
-    Outfile = ".env." + configPrefix[0]
 
-try:
-    in_file = open(Configfile, 'r')
-    out_file = open(Outfile, 'w')
-    condition = True
-    in_file.readline()
-    while condition:
-        condition = parse(in_file, out_file, "")
+def processFile(configfile):
+    outfile = ".env"
+    if ".json" in configfile:
+        configFilePrefix = string.split(configfile, "/")
+        length= len(configFilePrefix)-1
+        configPrefix = string.split(configFilePrefix[length], ".json")
+        outputPath = configFilePrefix[0]
+        for x in range(1, length):
+            outputPath += "/" + configFilePrefix[x]
+        outfile = outputPath + "/.env." + configPrefix[0]
+        try:
+            in_file = open(configfile, 'r')
+            out_file = open(outfile, 'w')
+            condition = True
+            in_file.readline()
+            while condition:
+                condition = parse(in_file, out_file, "")
+        finally:
+            in_file.close()
+            out_file.close()
+            print "Finished with " + outfile
 
 
 
-finally:
-    in_file.close()
-    out_file.close()
+inputFile = sys.argv[1]
 
-
+if os.path.isdir(inputFile):
+    '''Loop through all of the files'''
+    for f in os.listdir(inputFile):
+        processFile(inputFile + "/" + f)
+else:
+    processFile(inputFile)
